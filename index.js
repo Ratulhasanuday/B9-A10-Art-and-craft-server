@@ -2,9 +2,9 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const app = express();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000;
-app.use(cors());    
+app.use(cors());
 app.use(express.json());
 
 
@@ -27,14 +27,73 @@ async function run() {
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     const juteCraftCollections = client.db('uniceJuteCraftDB').collection('juteCraft');
-
-    app.get('/juteCrafts', async (req, res) => {
-        const cursor=juteCraftCollections.find()
-        const result=await cursor.toArray()
-        res.send(result)
+    //create users database 
+    const uniceUsers = client.db('uniceUsersDb').collection('user');
+    //get data form claind 
+    app.post('/juteCrafts', async (req, res) => {
+      const juteCraft = req.body;
+      console.log(juteCraft);
+      const result = await juteCraftCollections.insertOne(juteCraft);
+      res.send(result)
     })
+    //get data by id form server
+    app.get('/juteCrafts/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await juteCraftCollections.findOne(query)
+      res.send(result)
+    });
+    //get data form server
+    app.get('/juteCrafts', async (req, res) => {
+      const cursor = juteCraftCollections.find({});
+      const juteCrafts = await cursor.toArray();
+      res.send(juteCrafts);
+    })
+    // Delete form  server 
+    app.delete('/juteCrafts/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await juteCraftCollections.deleteOne(query)
+      res.send(result)
+    })
+    //update data form user
+    app.put('/juteCrafts/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const options = { upsert: true }
+      const updatedCard = req.body
+      const artCard = {
+        $set: {
+          name: updatedCard.name,
 
-
+          photo: updatedCard.photo,
+          subcategory: updatedCard.subcategory,
+          processingTime: updatedCard.processingTime,
+          rating: updatedCard.rating,
+          price: updatedCard.price,
+          userName: updatedCard.userName,
+          userEmail: updatedCard.userEmail,
+          details: updatedCard.details,
+          customaization: updatedCard.customaization,
+          stockStatus: updatedCard.stockStatus,
+        }
+      }
+      const result = await juteCraftCollections.updateOne(query, artCard, options)
+      res.send(result)
+    })
+    //user info post in database
+    app.post('/users', async (req, res) => {
+      const users=req.body;
+      const result= await uniceUsers.insertOne(users)
+      res.send(result)
+    })
+    // get data form database
+    app.get('/users/:email',async(req, res)=>{
+      const email=req.params.email;
+      console.log(email);
+      const reault= await uniceUsers.findOne({email})
+      res.json(reault)
+    })
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
@@ -45,9 +104,9 @@ run().catch(console.dir);
 
 
 app.get('/', (req, res) => {
-    res.send('Unice Jute and wooder craft server is running');
+  res.send('Unice Jute and wooder craft server is running');
 });
 app.listen(port, () => {
-    console.log(`Server is running on port: ${port}`);
+  console.log(`Server is running on port: ${port}`);
 });
 
