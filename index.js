@@ -23,9 +23,9 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     const juteCraftCollections = client.db('uniceJuteCraftDB').collection('juteCraft');
     //create users database 
     const uniceUsers = client.db('uniceUsersDb').collection('user');
@@ -82,18 +82,21 @@ async function run() {
       res.send(result)
     })
     //user info post in database
+   
     app.post('/users', async (req, res) => {
-      const users=req.body;
-      const result= await uniceUsers.insertOne(users)
-      res.send(result)
-    })
-    // get data form database
-    app.get('/users/:email',async(req, res)=>{
-      const email=req.params.email;
-      console.log(email);
-      const reault= await uniceUsers.findOne({email})
-      res.json(reault)
-    })
+      const users = req.body;
+      console.log("User data received:", users);
+      const result = await uniceUsers.insertOne(users);
+      res.send(result);
+    });
+
+    app.get('/users/:email', async (req, res) => {
+      const email = req.params.email.toLowerCase();
+      console.log("Fetching user with email:", email);
+      const result = await uniceUsers.findOne({ email });
+      console.log("User found:", result);
+      res.send(result || {});
+    });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
