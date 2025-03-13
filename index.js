@@ -1,10 +1,10 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const app = express();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000;
-app.use(cors());
+const app = express();
+app.use(cors({origin: "*"}));
 app.use(express.json());
 
 
@@ -28,7 +28,7 @@ async function run() {
     // await client.db("admin").command({ ping: 1 });
     const juteCraftCollections = client.db('uniceJuteCraftDB').collection('juteCraft');
     //create users database 
-    const uniceUsers = client.db('uniceUsersDb').collection('user');
+    const uniceUsers = client.db('uniceUsersDb').collection('users');
     //get data form claind 
     app.post('/juteCrafts', async (req, res) => {
       const juteCraft = req.body;
@@ -45,7 +45,7 @@ async function run() {
     });
     //get data form server
     app.get('/juteCrafts', async (req, res) => {
-      const cursor = juteCraftCollections.find({});
+      const cursor = juteCraftCollections.find();
       const juteCrafts = await cursor.toArray();
       res.send(juteCrafts);
     })
@@ -84,19 +84,23 @@ async function run() {
     //user info post in database
    
     app.post('/users', async (req, res) => {
-      const users = req.body;
-      console.log("User data received:", users);
-      const result = await uniceUsers.insertOne(users);
-      res.send(result);
-    });
-
-    app.get('/users/:email', async (req, res) => {
-      const email = req.params.email.toLowerCase();
-      console.log("Fetching user with email:", email);
-      const result = await uniceUsers.findOne({ email });
-      console.log("User found:", result);
-      res.send(result || {});
-    });
+        const users = req.body;
+        console.log("User data received:", users);
+        const result = await uniceUsers.insertOne(users);
+        res.send(result);
+      });
+      app.get('/users', async(req, res)=>{
+        const cursor= uniceUsers.find()
+        const result=await cursor.toArray(cursor)
+        res.send(result)
+      })
+      app.get('/users/:email', async (req, res) => {
+        const email = req.params.email.toLowerCase(); 
+        console.log(`Fetching user with email: ${email}`); 
+        const result = await uniceUsers.findOne({email})
+        res.send(result)
+      });
+      
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
